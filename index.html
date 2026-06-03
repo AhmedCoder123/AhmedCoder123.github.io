@@ -90,7 +90,7 @@
           window.lucide.createIcons();
         }
       });
-      return <i data-lucide={name} class={className} {...props}></i>;
+      return <i data-lucide={name} className={className} {...props}></i>;
     }
 
     function App() {
@@ -98,7 +98,7 @@
       const [studentName, setStudentName] = useState('');
       const [selectedPreset, setSelectedPreset] = useState('june2025');
       
-      // Dynamic variant states for June 2025 selector (Defaults to Variant 2 / S3 combinations commonly used in Zone 4)
+      // Dynamic variant states for June 2025 selector (Zone 4 Variant 2 Defaults)
       const [selectedVariants, setSelectedVariants] = useState({
         physics: 'S3',
         chemistry: 'S3',
@@ -167,7 +167,7 @@
         const weightedTotal = Math.round((weightedP1 + weightedP2 + weightedP3) * 100) / 100;
         const percentage = Math.round((weightedTotal / 130) * 100 * 10) / 10;
 
-        const subThreshold = customThresholds[subject] || { A: 90, B: 80, C: 70, D: 60, E: 50 };
+        const subThreshold = customThresholds[subject] || { A: 90, B: 80, C: 73, D: 62, E: 51 };
         let grade = 'U';
         if (weightedTotal >= subThreshold.A) grade = 'A';
         else if (weightedTotal >= subThreshold.B) grade = 'B';
@@ -268,14 +268,24 @@
       };
 
       const calculateTargetRequirement = () => {
-        const thresholds = customThresholds[targetSubject] || { A: 90, B: 80, C: 70, D: 60, E: 50 };
-        const targetScore = thresholds[targetGrade];
+        const thresholds = customThresholds[targetSubject] || { A: 90, B: 80, C: 73, D: 62, E: 51 };
+        const targetScore = thresholds[targetGrade] || 90;
 
         const activeStates = [knownPapers.p1.active, knownPapers.p2.active, knownPapers.p3.active];
         const activeCount = activeStates.filter(Boolean).length;
 
+        // Defensive fallbacks to prevent runtime null pointers during setup updates
         if (activeCount !== 2) {
-          return { error: 'Please select exactly two active (known) papers to solve for the third.' };
+          return { 
+            error: 'Please select exactly two active (known) papers to solve for the third.',
+            solvedPaper: 'p3',
+            targetScore,
+            knownWeighted: 0,
+            neededWeighted: 0,
+            neededRaw: 0,
+            isPossible: false,
+            isAlreadySecured: false
+          };
         }
 
         const solvedPaper = !knownPapers.p1.active ? 'p1' : !knownPapers.p2.active ? 'p2' : 'p3';
@@ -437,7 +447,7 @@
               </button>
             </div>
 
-            {}
+            {/* Dashboard tab template */}
             {activeTab === 'dashboard' && (
               <div className="space-y-8 animate-fadeIn">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -573,7 +583,10 @@
                         <label className="text-xs font-semibold text-slate-300 block">Physics (9702) Option Code</label>
                         <select 
                           value={selectedVariants.physics} 
-                          onChange={(e) => setSelectedVariants(prev => ({ ...prev, physics: e.target.value }))}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSelectedVariants(prev => ({ ...prev, physics: val }));
+                          }}
                           className="w-full bg-slate-950 border border-slate-800 rounded-lg text-xs py-2 px-3 focus:outline-none focus:ring-1 focus:ring-teal-500 text-slate-200"
                         >
                           {Object.entries(JUNE_2025_OPTIONS.physics).map(([key, opt]) => (
@@ -587,7 +600,10 @@
                         <label className="text-xs font-semibold text-slate-300 block">Chemistry (9701) Option Code</label>
                         <select 
                           value={selectedVariants.chemistry} 
-                          onChange={(e) => setSelectedVariants(prev => ({ ...prev, chemistry: e.target.value }))}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSelectedVariants(prev => ({ ...prev, chemistry: val }));
+                          }}
                           className="w-full bg-slate-950 border border-slate-800 rounded-lg text-xs py-2 px-3 focus:outline-none focus:ring-1 focus:ring-teal-500 text-slate-200"
                         >
                           {Object.entries(JUNE_2025_OPTIONS.chemistry).map(([key, opt]) => (
@@ -601,7 +617,10 @@
                         <label className="text-xs font-semibold text-slate-300 block">Biology (9700) Option Code</label>
                         <select 
                           value={selectedVariants.biology} 
-                          onChange={(e) => setSelectedVariants(prev => ({ ...prev, biology: e.target.value }))}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSelectedVariants(prev => ({ ...prev, biology: val }));
+                          }}
                           className="w-full bg-slate-950 border border-slate-800 rounded-lg text-xs py-2 px-3 focus:outline-none focus:ring-1 focus:ring-teal-500 text-slate-200"
                         >
                           {Object.entries(JUNE_2025_OPTIONS.biology).map(([key, opt]) => (
@@ -836,7 +855,7 @@
                   <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 opacity-10 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full blur-2xl"></div>
                     <div className="flex items-center gap-3 mb-6">
-                      <div class={`w-3 h-3 rounded-full ${activeTab === 'physics' ? 'bg-cyan-500' : activeTab === 'chemistry' ? 'bg-violet-500' : 'bg-emerald-500'}`}></div>
+                      <div className={`w-3 h-3 rounded-full ${activeTab === 'physics' ? 'bg-cyan-500' : activeTab === 'chemistry' ? 'bg-violet-500' : 'bg-emerald-500'}`}></div>
                       <h2 className="text-lg font-bold capitalize text-slate-100">{activeTab} Mark Entry</h2>
                     </div>
 
@@ -1023,7 +1042,10 @@
                         <label className="text-xs font-semibold text-slate-300 block">Physics (9702) Variant Option</label>
                         <select 
                           value={selectedVariants.physics} 
-                          onChange={(e) => setSelectedVariants(prev => ({ ...prev, physics: e.target.value }))}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSelectedVariants(prev => ({ ...prev, physics: val }));
+                          }}
                           className="w-full bg-slate-900 border border-slate-800 rounded-lg text-xs py-1.5 px-2.5 text-slate-200"
                         >
                           {Object.entries(JUNE_2025_OPTIONS.physics).map(([key, opt]) => (
@@ -1037,7 +1059,10 @@
                         <label className="text-xs font-semibold text-slate-300 block">Chemistry (9701) Variant Option</label>
                         <select 
                           value={selectedVariants.chemistry} 
-                          onChange={(e) => setSelectedVariants(prev => ({ ...prev, chemistry: e.target.value }))}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSelectedVariants(prev => ({ ...prev, chemistry: val }));
+                          }}
                           className="w-full bg-slate-900 border border-slate-800 rounded-lg text-xs py-1.5 px-2.5 text-slate-200"
                         >
                           {Object.entries(JUNE_2025_OPTIONS.chemistry).map(([key, opt]) => (
@@ -1051,7 +1076,10 @@
                         <label className="text-xs font-semibold text-slate-300 block">Biology (9700) Variant Option</label>
                         <select 
                           value={selectedVariants.biology} 
-                          onChange={(e) => setSelectedVariants(prev => ({ ...prev, biology: e.target.value }))}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSelectedVariants(prev => ({ ...prev, biology: val }));
+                          }}
                           className="w-full bg-slate-900 border border-slate-800 rounded-lg text-xs py-1.5 px-2.5 text-slate-200"
                         >
                           {Object.entries(JUNE_2025_OPTIONS.biology).map(([key, opt]) => (
@@ -1090,7 +1118,7 @@
               </div>
             )}
 
-            {}
+            {/* What If Tab */}
             {activeTab === 'whatif' && (
               <div className="space-y-6 animate-fadeIn">
                 <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 relative overflow-hidden">
@@ -1107,7 +1135,14 @@
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-slate-300 block mb-1.5">Select Subject</label>
-                          <select value={targetSubject} onChange={(e) => setTargetSubject(e.target.value)} className="w-full bg-slate-950 border border-slate-800 text-xs py-2 px-3.5 rounded-lg text-slate-200">
+                          <select 
+                            value={targetSubject} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setTargetSubject(val);
+                            }} 
+                            className="w-full bg-slate-950 border border-slate-800 text-xs py-2 px-3.5 rounded-lg text-slate-200"
+                          >
                             <option value="physics">Physics (9702)</option>
                             <option value="chemistry">Chemistry (9701)</option>
                             <option value="biology">Biology (9700)</option>
@@ -1116,7 +1151,14 @@
                         
                         <div>
                           <label className="text-xs font-semibold text-slate-300 block mb-1.5">Target Grade</label>
-                          <select value={targetGrade} onChange={(e) => setTargetGrade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 text-xs py-2 px-3.5 rounded-lg text-slate-200 font-mono">
+                          <select 
+                            value={targetGrade} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setTargetGrade(val);
+                            }} 
+                            className="w-full bg-slate-950 border border-slate-800 text-xs py-2 px-3.5 rounded-lg text-slate-200 font-mono"
+                          >
                             <option value="A">A</option>
                             <option value="B">B</option>
                             <option value="C">C</option>
@@ -1128,37 +1170,89 @@
 
                       <div className="space-y-4">
                         <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wide">Determine Paper Inputs</h4>
+                        
                         {/* Paper 1 solved parameter */}
                         <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-4">
                           <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer">
-                            <input type="checkbox" checked={knownPapers.p1.active} onChange={(e) => setKnownPapers(prev => ({ ...prev, p1: { ...prev.p1, active: e.target.checked } }))} className="rounded bg-slate-900 border-slate-800 text-amber-500 focus:ring-amber-500 h-4 w-4" />
+                            <input 
+                              type="checkbox" 
+                              checked={knownPapers.p1.active} 
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setKnownPapers(prev => ({ ...prev, p1: { ...prev.p1, active: checked } }));
+                              }} 
+                              className="rounded bg-slate-900 border-slate-800 text-amber-500 focus:ring-amber-500 h-4 w-4" 
+                            />
                             P1 is known
                           </label>
                           {knownPapers.p1.active ? (
-                            <input type="number" placeholder="0-40" value={knownPapers.p1.value} onChange={(e) => setKnownPapers(prev => ({ ...prev, p1: { ...prev.p1, value: e.target.value } }))} className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2 text-center w-20 font-mono text-slate-100" />
-                          ) : <span class="text-[11px] text-amber-400 font-mono bg-amber-500/5 px-2.5 py-1 rounded border border-amber-500/10">SOLVING FOR P1</span>}
+                            <input 
+                              type="number" 
+                              placeholder="0-40" 
+                              value={knownPapers.p1.value} 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setKnownPapers(prev => ({ ...prev, p1: { ...prev.p1, value: val } }));
+                              }} 
+                              className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2 text-center w-20 font-mono text-slate-100" 
+                            />
+                          ) : <span className="text-[11px] text-amber-400 font-mono bg-amber-500/5 px-2.5 py-1 rounded border border-amber-500/10">SOLVING FOR P1</span>}
                         </div>
 
                         {/* Paper 2 solved parameter */}
                         <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-4">
                           <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer">
-                            <input type="checkbox" checked={knownPapers.p2.active} onChange={(e) => setKnownPapers(prev => ({ ...prev, p2: { ...prev.p2, active: e.target.checked } }))} className="rounded bg-slate-900 border-slate-800 text-amber-500 focus:ring-amber-500 h-4 w-4" />
+                            <input 
+                              type="checkbox" 
+                              checked={knownPapers.p2.active} 
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setKnownPapers(prev => ({ ...prev, p2: { ...prev.p2, active: checked } }));
+                              }} 
+                              className="rounded bg-slate-900 border-slate-800 text-amber-500 focus:ring-amber-500 h-4 w-4" 
+                            />
                             P2 is known
                           </label>
                           {knownPapers.p2.active ? (
-                            <input type="number" placeholder="0-60" value={knownPapers.p2.value} onChange={(e) => setKnownPapers(prev => ({ ...prev, p2: { ...prev.p2, value: e.target.value } }))} className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2 text-center w-20 font-mono text-slate-100" />
-                          ) : <span class="text-[11px] text-amber-400 font-mono bg-amber-500/5 px-2.5 py-1 rounded border border-amber-500/10">SOLVING FOR P2</span>}
+                            <input 
+                              type="number" 
+                              placeholder="0-60" 
+                              value={knownPapers.p2.value} 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setKnownPapers(prev => ({ ...prev, p2: { ...prev.p2, value: val } }));
+                              }} 
+                              className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2 text-center w-20 font-mono text-slate-100" 
+                            />
+                          ) : <span className="text-[11px] text-amber-400 font-mono bg-amber-500/5 px-2.5 py-1 rounded border border-amber-500/10">SOLVING FOR P2</span>}
                         </div>
 
                         {/* Paper 3 solved parameter */}
                         <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-4">
                           <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer">
-                            <input type="checkbox" checked={knownPapers.p3.active} onChange={(e) => setKnownPapers(prev => ({ ...prev, p3: { ...prev.p3, active: e.target.checked } }))} className="rounded bg-slate-900 border-slate-800 text-amber-500 focus:ring-amber-500 h-4 w-4" />
+                            <input 
+                              type="checkbox" 
+                              checked={knownPapers.p3.active} 
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setKnownPapers(prev => ({ ...prev, p3: { ...prev.p3, active: checked } }));
+                              }} 
+                              className="rounded bg-slate-900 border-slate-800 text-amber-500 focus:ring-amber-500 h-4 w-4" 
+                            />
                             P3 is known
                           </label>
                           {knownPapers.p3.active ? (
-                            <input type="number" placeholder="0-40" value={knownPapers.p3.value} onChange={(e) => setKnownPapers(prev => ({ ...prev, p3: { ...prev.p3, value: e.target.value } }))} className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2 text-center w-20 font-mono text-slate-100" />
-                          ) : <span class="text-[11px] text-amber-400 font-mono bg-amber-500/5 px-2.5 py-1 rounded border border-amber-500/10">SOLVING FOR P3</span>}
+                            <input 
+                              type="number" 
+                              placeholder="0-40" 
+                              value={knownPapers.p3.value} 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setKnownPapers(prev => ({ ...prev, p3: { ...prev.p3, value: val } }));
+                              }} 
+                              className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2 text-center w-20 font-mono text-slate-100" 
+                            />
+                          ) : <span className="text-[11px] text-amber-400 font-mono bg-amber-500/5 px-2.5 py-1 rounded border border-amber-500/10">SOLVING FOR P3</span>}
                         </div>
                       </div>
                     </div>
@@ -1169,7 +1263,7 @@
                         <div className="bg-amber-500/5 border border-amber-500/20 text-amber-300 p-6 rounded-3xl text-center">
                           <Icon name="help-circle" className="w-10 h-10 mx-auto text-amber-400 mb-3" />
                           <h4 className="text-sm font-bold">Solver Configuration Error</h4>
-                          <p class="text-xs text-slate-400 mt-1">Please mark exactly two papers as "known" to calculate the remaining paper requirement.</p>
+                          <p className="text-xs text-slate-400 mt-2">{targetResult.error}</p>
                         </div>
                       ) : (
                         <div className="bg-slate-950/60 border border-slate-800 p-6 rounded-3xl space-y-6">
